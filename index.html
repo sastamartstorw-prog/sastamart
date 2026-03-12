@@ -1,34 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>SastaMart</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SastaMart</title>
 
 <style>
 
 body{
 font-family:Arial;
 margin:0;
-background:#f4f4f4;
+background:#f5f5f5;
 }
 
 header{
-background:#0d6efd;
+background:#2874f0;
 color:white;
-text-align:center;
 padding:15px;
+text-align:center;
 font-size:22px;
 }
 
-.container{
-padding:15px;
+.search{
+background:white;
+padding:10px;
+text-align:center;
+}
+
+.search input{
+width:90%;
+padding:10px;
+font-size:16px;
+}
+
+.categories{
+display:flex;
+justify-content:center;
+gap:10px;
+background:white;
+padding:10px;
+flex-wrap:wrap;
+}
+
+.categories button{
+background:#2874f0;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:5px;
 }
 
 .products{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
 gap:15px;
-margin-top:20px;
+padding:15px;
 }
 
 .card{
@@ -36,204 +61,191 @@ background:white;
 padding:10px;
 border-radius:10px;
 text-align:center;
-box-shadow:0 0 5px rgba(0,0,0,0.1);
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
 .card img{
 width:100%;
+border-radius:8px;
 }
 
-input,textarea{
-width:100%;
-padding:10px;
-margin:5px 0;
+.price{
+color:green;
+font-weight:bold;
 }
 
-button{
-background:#0d6efd;
-color:white;
+button.buy{
+background:#ff9f00;
 border:none;
-padding:10px;
+padding:8px;
 margin-top:5px;
-cursor:pointer;
+color:white;
+border-radius:5px;
+}
+
+button.cart{
+background:#fb641b;
+border:none;
+padding:8px;
+margin-top:5px;
+color:white;
+border-radius:5px;
+}
+
+.cartBar{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#2874f0;
+color:white;
+padding:10px;
+text-align:center;
+}
+
+.orderForm{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:white;
+padding:15px;
+display:none;
+box-shadow:0 -3px 10px rgba(0,0,0,0.2);
+}
+
+.orderForm input,select{
+width:95%;
+padding:10px;
+margin:5px;
 }
 
 </style>
-
 </head>
 
 <body>
 
 <header>SastaMart Electronic Store</header>
 
-<div class="container">
+<div class="search">
+<input type="text" placeholder="Search product..." onkeyup="searchProduct(this.value)">
+</div>
 
-<button onclick="showLogin()">Admin Login</button>
+<div class="categories">
+<button onclick="filterCategory('all')">All</button>
+<button onclick="filterCategory('airpods')">AirPods</button>
+<button onclick="filterCategory('watch')">Watch</button>
+<button onclick="filterCategory('speaker')">Speaker</button>
+</div>
+
+<div class="products" id="products">
+
+<div class="card" data-category="airpods">
+<img src="https://i.imgur.com/0E6zG5R.jpg">
+<h4>AirPods Pro</h4>
+<p class="price">₹999</p>
+<button class="buy" onclick="buy('AirPods Pro')">Buy Now</button>
+</div>
+
+<div class="card" data-category="watch">
+<img src="https://i.imgur.com/YV4pZ4F.jpg">
+<h4>Smart Watch</h4>
+<p class="price">₹799</p>
+<button class="buy" onclick="buy('Smart Watch')">Buy Now</button>
+</div>
+
+<div class="card" data-category="speaker">
+<img src="https://i.imgur.com/6Iej2c3.jpg">
+<h4>Bluetooth Speaker</h4>
+<p class="price">₹599</p>
+<button class="buy" onclick="buy('Bluetooth Speaker')">Buy Now</button>
+</div>
 
 </div>
 
-<div class="container" id="loginBox" style="display:none">
+<div class="orderForm" id="orderForm">
 
-<h3>Admin Login</h3>
+<h3>Order Details</h3>
 
-<input id="user" placeholder="Username">
-<input id="pass" type="password" placeholder="Password">
+<input id="name" placeholder="Full Name">
+<input id="phone" placeholder="Phone Number">
+<input id="address" placeholder="Address">
+<select id="payment">
+<option>Cash on Delivery</option>
+<option>Prepaid</option>
+</select>
 
-<button onclick="login()">Login</button>
-
-</div>
-
-<div class="container" id="adminPanel" style="display:none">
-
-<h3>Add Product</h3>
-
-<input id="pname" placeholder="Product Name">
-<input id="pprice" placeholder="Price">
-<input id="pcod" placeholder="COD Charge">
-
-<input type="file" id="pimg">
-
-<button onclick="addProduct()">Add Product</button>
-
-</div>
-
-<div class="container">
-
-<div class="products" id="productList"></div>
-
-</div>
-
-<div class="container" id="orderBox" style="display:none">
-
-<h3>Order Form</h3>
-
-<input id="cname" placeholder="Full Name">
-<input id="cphone" placeholder="Phone Number">
-<textarea id="caddress" placeholder="Full Address"></textarea>
-
-<button onclick="submitOrder()">Place Order</button>
+<button onclick="placeOrder()">Place Order</button>
 
 </div>
 
 <script>
 
-let adminUser="admin";
-let adminPass="12345";
+var selectedProduct="";
 
-let products=JSON.parse(localStorage.getItem("products"))||[];
+function buy(product){
 
-let selectedProduct="";
+selectedProduct=product;
 
-function showLogin(){
-document.getElementById("loginBox").style.display="block";
-}
-
-function login(){
-
-let u=document.getElementById("user").value;
-let p=document.getElementById("pass").value;
-
-if(u==adminUser && p==adminPass){
-
-document.getElementById("adminPanel").style.display="block";
-
-alert("Admin Login Success");
-
-}else{
-
-alert("Wrong Login");
+document.getElementById("orderForm").style.display="block";
 
 }
 
-}
+function placeOrder(){
 
-function addProduct(){
+var name=document.getElementById("name").value;
+var phone=document.getElementById("phone").value;
+var address=document.getElementById("address").value;
+var payment=document.getElementById("payment").value;
 
-let name=document.getElementById("pname").value;
-let price=document.getElementById("pprice").value;
-let cod=document.getElementById("pcod").value;
+var msg="Order:%0AProduct: "+selectedProduct+
+"%0AName: "+name+
+"%0APhone: "+phone+
+"%0AAddress: "+address+
+"%0APayment: "+payment;
 
-let file=document.getElementById("pimg").files[0];
+var url="https://wa.me/917439127747?text="+msg;
 
-let reader=new FileReader();
-
-reader.onload=function(e){
-
-let img=e.target.result;
-
-products.push({name,price,cod,img});
-
-localStorage.setItem("products",JSON.stringify(products));
-
-showProducts();
-
-};
-
-reader.readAsDataURL(file);
+window.open(url);
 
 }
 
-function showProducts(){
+function searchProduct(text){
 
-let list=document.getElementById("productList");
+text=text.toLowerCase();
 
-list.innerHTML="";
+var cards=document.querySelectorAll(".card");
 
-products.forEach((p,i)=>{
+cards.forEach(c=>{
 
-list.innerHTML+=`
+if(c.innerText.toLowerCase().includes(text))
+c.style.display="block";
 
-<div class="card">
-
-<img src="${p.img}">
-
-<h3>${p.name}</h3>
-
-<p>Price ₹${p.price}</p>
-
-<p>COD charge ₹${p.cod}</p>
-
-<button onclick="order('${p.name}')">Order</button>
-
-</div>
-
-`;
+else
+c.style.display="none";
 
 });
 
 }
 
-function order(product){
+function filterCategory(cat){
 
-selectedProduct=product;
+var cards=document.querySelectorAll(".card");
 
-document.getElementById("orderBox").style.display="block";
+cards.forEach(c=>{
 
-}
+if(cat==="all")
+c.style.display="block";
 
-function submitOrder(){
+else if(c.dataset.category===cat)
+c.style.display="block";
 
-let name=document.getElementById("cname").value;
-let phone=document.getElementById("cphone").value;
-let address=document.getElementById("caddress").value;
+else
+c.style.display="none";
 
-let msg=`New Order - SastaMart
-
-Product: ${selectedProduct}
-
-Name: ${name}
-
-Phone: ${phone}
-
-Address: ${address}`;
-
-let url="https://api.whatsapp.com/send?phone=917439127747&text="+encodeURIComponent(msg);
-
-window.open(url,"_blank");
+});
 
 }
-
-showProducts();
 
 </script>
 
