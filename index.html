@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+<title>SastaMart Ultra</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SastaMart</title>
 
 <style>
 
 body{
 font-family:Arial;
 margin:0;
-background:#f5f5f5;
+background:#f1f3f6;
 }
 
 header{
@@ -21,231 +23,251 @@ font-size:22px;
 }
 
 .search{
-background:white;
-padding:10px;
-text-align:center;
-}
-
-.search input{
 width:90%;
 padding:10px;
+margin:10px;
 font-size:16px;
-}
-
-.categories{
-display:flex;
-justify-content:center;
-gap:10px;
-background:white;
-padding:10px;
-flex-wrap:wrap;
-}
-
-.categories button{
-background:#2874f0;
-color:white;
-border:none;
-padding:8px 12px;
-border-radius:5px;
 }
 
 .products{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
-gap:15px;
-padding:15px;
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+padding:10px;
 }
 
 .card{
 background:white;
 padding:10px;
 border-radius:10px;
+box-shadow:0 0 5px rgba(0,0,0,0.2);
 text-align:center;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
 .card img{
 width:100%;
-border-radius:8px;
+border-radius:6px;
 }
 
 .price{
 color:green;
-font-weight:bold;
+font-size:18px;
 }
 
-button.buy{
-background:#ff9f00;
+.buy{
+background:orange;
 border:none;
-padding:8px;
-margin-top:5px;
+padding:8px 14px;
 color:white;
 border-radius:5px;
 }
 
-button.cart{
-background:#fb641b;
+.adminBtn{
+position:fixed;
+bottom:15px;
+right:15px;
+background:black;
+color:white;
 border:none;
-padding:8px;
-margin-top:5px;
-color:white;
-border-radius:5px;
+padding:12px;
+border-radius:50%;
 }
 
-.cartBar{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:#2874f0;
-color:white;
-padding:10px;
-text-align:center;
-}
-
-.orderForm{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
+.admin{
+display:none;
 background:white;
 padding:15px;
-display:none;
-box-shadow:0 -3px 10px rgba(0,0,0,0.2);
 }
 
-.orderForm input,select{
-width:95%;
-padding:10px;
-margin:5px;
+input,select,textarea{
+width:100%;
+padding:8px;
+margin:5px 0;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<header>SastaMart Electronic Store</header>
+<header>SastaMart Ultra</header>
 
-<div class="search">
-<input type="text" placeholder="Search product..." onkeyup="searchProduct(this.value)">
-</div>
+<input class="search" placeholder="Search product..." onkeyup="searchProduct(this.value)">
 
-<div class="categories">
-<button onclick="filterCategory('all')">All</button>
-<button onclick="filterCategory('airpods')">AirPods</button>
-<button onclick="filterCategory('watch')">Watch</button>
-<button onclick="filterCategory('speaker')">Speaker</button>
-</div>
+<div class="products" id="products"></div>
 
-<div class="products" id="products">
+<button class="adminBtn" onclick="adminLogin()">⚙</button>
 
-<div class="card" data-category="airpods">
-<img src="https://i.imgur.com/0E6zG5R.jpg">
-<h4>AirPods Pro</h4>
-<p class="price">₹999</p>
-<button class="buy" onclick="buy('AirPods Pro')">Buy Now</button>
-</div>
+<div class="admin" id="adminPanel">
 
-<div class="card" data-category="watch">
-<img src="https://i.imgur.com/YV4pZ4F.jpg">
-<h4>Smart Watch</h4>
-<p class="price">₹799</p>
-<button class="buy" onclick="buy('Smart Watch')">Buy Now</button>
-</div>
+<h3>Add Product</h3>
 
-<div class="card" data-category="speaker">
-<img src="https://i.imgur.com/6Iej2c3.jpg">
-<h4>Bluetooth Speaker</h4>
-<p class="price">₹599</p>
-<button class="buy" onclick="buy('Bluetooth Speaker')">Buy Now</button>
-</div>
+<input id="pname" placeholder="Product name">
 
-</div>
+<input id="pprice" placeholder="Price">
 
-<div class="orderForm" id="orderForm">
+<input id="pcod" placeholder="COD charge">
 
-<h3>Order Details</h3>
+<input id="img1" placeholder="Image URL 1">
+<input id="img2" placeholder="Image URL 2">
+<input id="img3" placeholder="Image URL 3">
+<input id="img4" placeholder="Image URL 4">
 
-<input id="name" placeholder="Full Name">
-<input id="phone" placeholder="Phone Number">
-<input id="address" placeholder="Address">
-<select id="payment">
-<option>Cash on Delivery</option>
-<option>Prepaid</option>
-</select>
+<button onclick="addProduct()">Add Product</button>
 
-<button onclick="placeOrder()">Place Order</button>
+<h3>Orders</h3>
+
+<div id="orders"></div>
 
 </div>
 
 <script>
 
-var selectedProduct="";
+let products=JSON.parse(localStorage.getItem("products"))||[]
+let orders=JSON.parse(localStorage.getItem("orders"))||[]
 
-function buy(product){
+function save(){
 
-selectedProduct=product;
-
-document.getElementById("orderForm").style.display="block";
-
-}
-
-function placeOrder(){
-
-var name=document.getElementById("name").value;
-var phone=document.getElementById("phone").value;
-var address=document.getElementById("address").value;
-var payment=document.getElementById("payment").value;
-
-var msg="Order:%0AProduct: "+selectedProduct+
-"%0AName: "+name+
-"%0APhone: "+phone+
-"%0AAddress: "+address+
-"%0APayment: "+payment;
-
-var url="https://wa.me/917439127747?text="+msg;
-
-window.open(url);
+localStorage.setItem("products",JSON.stringify(products))
+localStorage.setItem("orders",JSON.stringify(orders))
 
 }
 
-function searchProduct(text){
+function showProducts(list=products){
 
-text=text.toLowerCase();
+let html=""
 
-var cards=document.querySelectorAll(".card");
+list.forEach((p,i)=>{
 
-cards.forEach(c=>{
+html+=`
 
-if(c.innerText.toLowerCase().includes(text))
-c.style.display="block";
+<div class="card">
 
-else
-c.style.display="none";
+<img src="${p.img1}">
 
-});
+<h4>${p.name}</h4>
+
+<div class="price">₹${p.price}</div>
+
+<button class="buy" onclick="productPage(${i})">Buy Now</button>
+
+</div>
+
+`
+
+})
+
+document.getElementById("products").innerHTML=html
+
+}
+
+function addProduct(){
+
+let p={
+
+name:pname.value,
+price:pprice.value,
+cod:pcod.value,
+img1:img1.value,
+img2:img2.value,
+img3:img3.value,
+img4:img4.value
 
 }
 
-function filterCategory(cat){
+products.push(p)
 
-var cards=document.querySelectorAll(".card");
+save()
 
-cards.forEach(c=>{
+showProducts()
 
-if(cat==="all")
-c.style.display="block";
-
-else if(c.dataset.category===cat)
-c.style.display="block";
-
-else
-c.style.display="none";
-
-});
+alert("Product added")
 
 }
+
+function productPage(i){
+
+let name=prompt("Name")
+let phone=prompt("Phone")
+let address=prompt("Address")
+let state=prompt("State")
+let pin=prompt("Pin code")
+
+orders.push({
+
+product:products[i].name,
+name,
+phone,
+address,
+state,
+pin
+
+})
+
+save()
+
+alert("Order placed")
+
+}
+
+function adminLogin(){
+
+let pass=prompt("Admin password")
+
+if(pass=="1234"){
+
+document.getElementById("adminPanel").style.display="block"
+
+showOrders()
+
+}
+
+}
+
+function showOrders(){
+
+let html=""
+
+orders.forEach(o=>{
+
+html+=`
+
+<p>
+
+<b>${o.product}</b><br>
+
+${o.name}<br>
+
+${o.phone}<br>
+
+${o.address}<br>
+
+${o.state} - ${o.pin}
+
+</p>
+
+<hr>
+
+`
+
+})
+
+document.getElementById("orders").innerHTML=html
+
+}
+
+function searchProduct(q){
+
+q=q.toLowerCase()
+
+let filtered=products.filter(p=>p.name.toLowerCase().includes(q))
+
+showProducts(filtered)
+
+}
+
+showProducts()
 
 </script>
 
